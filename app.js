@@ -41,6 +41,32 @@ $('#exportNeed')?.addEventListener('click',()=>download('SchlesischesTor-Bedarf.
 $('#restore')?.addEventListener('click',async()=>{const file=$('#restoreFile').files[0];if(!file)return toast('Datei auswählen');try{const s=JSON.parse(await file.text());if(s.version!==1||!Array.isArray(s.products)||!Array.isArray(s.units)||!Array.isArray(s.movements)||!Array.isArray(s.events)||!Array.isArray(s.counts))throw Error('Ungültiges Sicherungsformat');if(!confirm('Alle aktuellen Daten ersetzen?'))return;state=s;await save();render();toast('Sicherung wiederhergestellt')}catch(e){toast('Import fehlgeschlagen: '+e.message)}})
 }
 function download(name,content,type){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-async function scanBarcode(){const box=$('#camera');if(!('BarcodeDetector' in window)){box.innerHTML='<p class="warn">Kamera-Barcodeerkennung ist in diesem Browser nicht verfügbar. Bitte Barcode manuell eingeben oder einen kompatiblen Scanner verwenden.</p>';return}try{const detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128']});const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});box.innerHTML='<video autoplay playsinline muted></video><button type="button" id="stopScan" class="secondary">Scanner schließen</button>';const video=box.querySelector('video');video.srcObject=stream;scanner={stream,closed:false};$('#stopScan').onclick=()=>{stopScanner();box.innerHTML=''};const current=scanner;async function loop(){if(current.closed)return;try{if(video.readyState>=2){const codes=await detector.detect(video);if(codes.length){$('#barcodeField').value=codes[0].rawValue;stopScanner();box.innerHTML='';toast('Barcode erkannt');return}}}catch{}setTimeout(loop,350)}loop()}catch(e){box.innerHTML='<p class="warn">Kamerazugriff nicht möglich. Barcode bitte manuell eingeben.</p>'}}
-function stopScanner(){if(scanner){scanner.closed=true;scanner.stream.getTracks().forEach(t=>t.stop());scanner=null}}
+async function scanBarcode(){
+ const box=$('#camera');
+ if(!navigator.mediaDevices?.getUserMedia){box.innerHTML='<p class="warn">Kamera nicht verfügbar. Bitte die App über HTTPS in Safari öffnen.</p>';return}
+ box.innerHTML='<p>Scanner wird geladen …</p>';
+ try{
+  if(!window.ZXingBrowser){
+   await new Promise((resolve,reject)=>{
+    const script=document.createElement('script');
+    script.src='https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/zxing-browser.min.js';
+    script.onload=resolve;script.onerror=()=>reject(new Error('Scannerbibliothek konnte nicht geladen werden'));
+    document.head.appendChild(script);
+   });
+  }
+  if(!window.ZXingBrowser?.BrowserMultiFormatReader)throw new Error('Scannerbibliothek nicht verfügbar');
+  box.innerHTML='<video autoplay playsinline muted style="width:100%;max-height:300px;background:#000;border-radius:12px"></video><button type="button" id="stopScan" class="secondary">Scanner schließen</button>';
+  const video=box.querySelector('video');
+  const reader=new ZXingBrowser.BrowserMultiFormatReader();
+  const current={closed:false,controls:null,stream:null};scanner=current;
+  $('#stopScan').onclick=()=>{stopScanner();box.innerHTML=''};
+  current.controls=await reader.decodeFromConstraints({audio:false,video:{facingMode:{ideal:'environment'}}},video,(result,error,controls)=>{
+   if(current.closed||!result)return;
+   const value=result.getText();
+   if(value){const field=$('#barcodeField');if(field)field.value=value;stopScanner();box.innerHTML='';toast('Barcode erkannt: '+value)}
+  });
+  if(current.closed)current.controls?.stop();
+ }catch(e){stopScanner();box.innerHTML='<p class="warn">Scanner konnte nicht gestartet werden. Prüfe Kameraberechtigung und Internetverbindung beim ersten Start. Barcode kann manuell eingegeben werden.</p>';console.error(e)}
+}
+function stopScanner(){if(scanner){scanner.closed=true;scanner.controls?.stop();scanner.stream?.getTracks().forEach(t=>t.stop());scanner=null}}
 (async()=>{try{state=await load();render();if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});}catch(e){$('#app').innerHTML='<section class="card"><h2>Speicher nicht verfügbar</h2><p>Bitte Safari im normalen Modus verwenden. Fehler: '+esc(e.message)+'</p></section>'}})();
