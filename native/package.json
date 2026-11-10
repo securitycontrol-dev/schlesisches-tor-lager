@@ -5,7 +5,8 @@
   "scripts": {
     "prepare:web": "node scripts/copy-web.mjs",
     "ios:sync": "npm run prepare:web && npx cap sync ios",
-    "ios:open": "npx cap open ios"
+    "ios:open": "npx cap open ios",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@capacitor/core": "^7.0.0",
@@ -13,5 +14,6 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^7.0.0"
-  }
+  },
+  "type": "module"
 }
