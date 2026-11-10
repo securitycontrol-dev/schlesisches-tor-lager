@@ -1,0 +1,17 @@
+{
+  "name": "schlesisches-tor-native",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "prepare:web": "node scripts/copy-web.mjs",
+    "ios:sync": "npm run prepare:web && npx cap sync ios",
+    "ios:open": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/ios": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0"
+  }
+}
