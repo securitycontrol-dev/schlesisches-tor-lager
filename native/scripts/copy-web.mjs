@@ -1,1 +1,17 @@
-import {copyFile,mkdir} from 'node:fs/promises';import {resolve} from 'node:path';const root=resolve(import.meta.dirname,'../..'),out=resolve(root,'native/www');await mkdir(out,{recursive:true});for(const name of ['index.html','app.js','style.css','icon.svg','manifest.webmanifest'])await copyFile(resolve(root,name),resolve(out,name));console.log('Web-Oberfläche in native/www kopiert. Bestehende Daten werden nicht verändert.');
+import {copyFile,mkdir,readFile,writeFile} from 'node:fs/promises';
+import {resolve,dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+const scriptDir=dirname(fileURLToPath(import.meta.url));
+const root=resolve(scriptDir,'../..');
+const out=resolve(root,'native/www');
+await mkdir(out,{recursive:true});
+for(const name of ['index.html','app.js','style.css','icon.svg','manifest.webmanifest'])await copyFile(resolve(root,name),resolve(out,name));
+const scanner=resolve(root,'native/node_modules/@zxing/browser/umd/zxing-browser.min.js');
+await copyFile(scanner,resolve(out,'zxing-browser.min.js'));
+const appPath=resolve(out,'app.js');
+let app=await readFile(appPath,'utf8');
+const remote="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/zxing-browser.min.js";
+if(!app.includes(remote))throw new Error('Scanner-Script-URL wurde geändert; Offline-Paketierung prüfen');
+app=app.replaceAll(remote,'./zxing-browser.min.js');
+await writeFile(appPath,app);
+console.log('Native Web-Dateien einschließlich lokalem Barcode-Scanner vorbereitet. Quell-PWA und bestehende Daten bleiben unverändert.');
