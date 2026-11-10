@@ -1,42 +1,71 @@
-# Native iOS/iPadOS Vorbereitung
+# Schlesisches Tor Lager – Xcode Schnellstart
 
-**Status:** Installierbares Capacitor-Projekt vorbereitet; CloudKit, iCloud-Drive-Backups und vollständige Konfliktauflösung sind **noch nicht implementiert**. Die bestehende GitHub-Pages-PWA bleibt unverändert.
+**Stand:** iOS/iPadOS-Projekt wird mit Capacitor lokal erzeugt. Die bestehende PWA und ihre GitHub-Pages-Dateien bleiben erhalten. Der native Scanner wird aus dem npm-Paket lokal eingebunden, sodass die Scannerbibliothek auch ohne Internet geladen wird.
 
-## Nach dem macOS-Update
+## Voraussetzungen auf dem Mac
 
-1. Repository lokal aktualisieren: `git pull`.
-2. `cd native && npm install`.
-3. `npm run prepare:web` (kopiert bestehende Weboberfläche nach `native/www`).
-4. `npx cap add ios` (einmalig; benötigt Xcode und CocoaPods).
-5. `npm run ios:sync && npm run ios:open`.
-6. In Xcode Team, Bundle-ID und Signierung prüfen; auf iPhone und iPad installieren und lokale Datenmigration testen.
+- macOS mit zu Xcode passender Version, Xcode und Xcode Command Line Tools
+- Node.js 20.11 oder neuer, npm
+- CocoaPods, falls Capacitor/Xcode es anfordert; bei Fehlermeldung `pod --version` prüfen
+- Für die Installation auf einem echten iPhone: Apple-ID/Signing Team in Xcode und am Mac angeschlossenes oder gekoppeltes Gerät
 
-**Achtung:** Auf Geräten vorhandene Safari-/PWA-IndexedDB-Daten werden durch die native App nicht automatisch übernommen. Vor der Umstellung in der alten PWA ein manuelles Backup exportieren und die Wiederherstellung in einer Testinstallation prüfen. Originaldaten niemals ohne geprüftes Backup löschen.
+## Erstmalig starten
 
-## Geplante native CloudKit-Anbindung
+Im Terminal:
 
-- CloudKit Private Database im selben Apple-Account; Container-ID und iCloud-Capability in Xcode konfigurieren.
-- Native Bridge zwischen JavaScript und CloudKit implementieren; keine CloudKit-Schlüssel in JavaScript einbetten.
-- Unveränderliche Buchungsoperationen mit UUID, Geräte-ID, Zeitpunkt und Status. Bei Netzwerkfehlern lokal behalten, wiederholen, auf CloudKit-Record-ID deduplizieren.
-- Artikel-Metadaten per Versionsprüfung aktualisieren; gleichzeitig geänderte Werte als Konflikt anzeigen. Inventuren und Veranstaltungsabschlüsse brauchen einen kontrollierten Abgleich und eine Sperr-/Konfliktstrategie; **keine** stillen Last-Write-Wins-Überschreibungen.
-- CloudKit-Änderungen auf beiden Geräten nach App-Start und bei Push/Refresh nachladen. Offline-Buchungen müssen vor Freigabe in realistischen Konflikttests geprüft werden.
+```bash
+cd "/Users/roccogadenne/Desktop/APP/Schlesisches Tor/schlesisches-tor-lager"
+git pull
+cd native
+npm install
+npm test
+npm run ios:setup
+npm run ios:open
+```
 
-## Backup-Anforderung
+`ios:setup` kopiert die aktuelle Oberfläche, integriert die ZXing-Scannerbibliothek, erstellt das iOS-Projekt bei Bedarf, synchronisiert Capacitor und ergänzt `NSCameraUsageDescription` in `Info.plist`.
 
-- Tägliches, **verschlüsseltes** vollständiges Backup in iCloud Drive, wenn die App läuft; bei versäumter Sicherung beim nächsten Start nachholen.
-- Automatische Sicherungen 30 Tage aufbewahren, manuelle nicht automatisch löschen.
-- Verschlüsselung mit einem vom Nutzer sicher aufbewahrten Wiederherstellungsschlüssel; AES-GCM mit zufälligem Nonce je Sicherung, KDF und Formatversion. **Keine** unverschlüsselten temporären Exporte in iCloud Drive.
-- Prüfsumme/Integritätsprüfung und Test-Wiederherstellung vor Freigabe. Vor Wiederherstellung aktuellen Stand sichern, Synchronisierung anhalten, Konflikte kontrolliert auflösen.
-- iCloud Drive ist von CloudKit zu unterscheiden. Die Dateispeicherung erfordert eine eigene native iOS-Implementierung.
+Falls `npm run ios:setup` mit CocoaPods-Fehler abbricht, erst `pod --version` prüfen und CocoaPods auf dem Mac installieren oder reparieren. **Nicht** die bestehenden Lagerdaten oder das GitHub-Repository löschen.
 
-## Tests vor produktiver Nutzung
+## Xcode
 
-- Erstinstallation iPhone/iPad; Barcode-Scanner-Berechtigung; beide Geräte gleiche Apple-ID.
-- Offline-Buchung auf beiden Geräten und späterer paralleler Sync; gleiche Buchung nicht doppelt.
-- Gleichzeitige Inventur und Veranstaltungsabschluss; Konfliktlösung.
-- App-Neustart, Gerätewechsel, Backup 30-Tage-Rotation, Schlüsselverlust-Szenario, Backup-Wiederherstellung.
-- Altbestand aus PWA exportieren und vollständig gegen native Daten vergleichen.
+1. Das geöffnete Projekt `native/ios/App/App.xcworkspace` auswählen (nicht nur die .xcodeproj-Datei).
+2. Unter **App → Signing & Capabilities** das eigene Apple-Team wählen und **Automatically manage signing** aktivieren.
+3. Die Bundle-ID `de.schlesischestor.lager` auf Eindeutigkeit prüfen; falls Apple sie bereits belegt hat, in Xcode eine eigene ID setzen.
+4. Unter **Devices** das iPhone oder iPad wählen; auf dem Gerät ggf. den Entwicklermodus einschalten.
+5. Mit **Run ▶** die App bauen und installieren. Kamera-Berechtigung beim ersten Scannen erlauben.
 
-## Aktueller Funktionsstand der Weboberfläche
+Bei weiteren Änderungen an der Weboberfläche:
 
-Die Weboberfläche enthält jetzt zusätzlich **Erweiterte Auswertung** (Inventurdifferenzen, Veranstaltungsvergleich, Einkaufsliste, Entsorgung) und **Synchronisierung** (ehrlicher Hinweis: CloudKit noch nicht aktiv). Der vorhandene Dauerscan-Modus in der Sammelbuchung bleibt bestehen. Diese Änderungen sind zunächst JavaScript-syntaktisch geprüft, nicht auf iOS end-to-end getestet. Bei bestehender Installation vor dem ersten Update ein manuelles JSON-Backup erstellen. Keine neue Datenbankversion und keine automatische Löschung bestehender Datensätze.
+```bash
+git pull
+cd native
+npm install
+npm test
+npm run ios:sync
+npm run ios:open
+```
+
+## Datenübernahme und Sicherheit
+
+**Wichtig:** Die Safari-/PWA-IndexedDB und die native Capacitor-IndexedDB sind getrennt. Die vorhandenen Daten werden **nicht automatisch** in die installierte App übernommen.
+
+1. In der bisherigen Safari-PWA unter **Sicherung** ein JSON-Backup exportieren und an einem sicheren Ort speichern.
+2. Die native App installieren, zunächst ohne produktive Buchungen.
+3. In der nativen App unter **Mehr → Sicherung** das Backup importieren und Bestände/Artikel/Buchungen kontrollieren.
+4. Die ursprüngliche PWA und ihr Backup behalten, bis die Übernahme geprüft wurde.
+
+Die aktuelle App speichert **lokal auf dem jeweiligen Gerät**. Es gibt noch keine funktionsfähige CloudKit-Synchronisierung, keine automatischen verschlüsselten iCloud-Drive-Backups und keine Konfliktauflösung. Zwei Geräte deshalb noch **nicht parallel produktiv** nutzen.
+
+## Testplan vor echtem Betrieb
+
+- App öffnen, schließen und neu öffnen; gespeicherte Artikel bleiben erhalten
+- Artikel anlegen und EAN scannen; Kamera-Berechtigung prüfen
+- Offline: Artikel und Buchungen ohne Internet durchführen
+- Hauptlager → Bar umbuchen und MHD/Chargen erhalten
+- Inventur und Dauerscanner ausprobieren
+- Eine Testveranstaltung anlegen und abschließen, PDF-Bericht prüfen
+- JSON-Backup exportieren, in einer Testinstallation wiederherstellen und Zahlen vergleichen
+- iPhone und iPad getrennt testen
+
+**Noch nicht auf einem echten Gerät getestet.** Die iOS-Projektdateien werden beim Setup auf dem Mac erzeugt; Xcode-Signing und native Builds können erst dort validiert werden.
