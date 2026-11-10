@@ -1,0 +1,8 @@
+{
+  "appId": "de.schlesischestor.lager",
+  "appName": "Schlesisches Tor Lager",
+  "webDir": "www",
+  "server": {
+    "iosScheme": "capacitor"
+  }
+}
