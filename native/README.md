@@ -36,3 +36,7 @@
 - Gleichzeitige Inventur und Veranstaltungsabschluss; Konfliktlösung.
 - App-Neustart, Gerätewechsel, Backup 30-Tage-Rotation, Schlüsselverlust-Szenario, Backup-Wiederherstellung.
 - Altbestand aus PWA exportieren und vollständig gegen native Daten vergleichen.
+
+## Aktueller Funktionsstand der Weboberfläche
+
+Die Weboberfläche enthält jetzt zusätzlich **Erweiterte Auswertung** (Inventurdifferenzen, Veranstaltungsvergleich, Einkaufsliste, Entsorgung) und **Synchronisierung** (ehrlicher Hinweis: CloudKit noch nicht aktiv). Der vorhandene Dauerscan-Modus in der Sammelbuchung bleibt bestehen. Diese Änderungen sind zunächst JavaScript-syntaktisch geprüft, nicht auf iOS end-to-end getestet. Bei bestehender Installation vor dem ersten Update ein manuelles JSON-Backup erstellen. Keine neue Datenbankversion und keine automatische Löschung bestehender Datensätze.
