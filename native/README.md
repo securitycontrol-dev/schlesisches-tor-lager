@@ -69,3 +69,18 @@ Die aktuelle App speichert **lokal auf dem jeweiligen Gerät**. Es gibt noch kei
 - iPhone und iPad getrennt testen
 
 **Noch nicht auf einem echten Gerät getestet.** Die iOS-Projektdateien werden beim Setup auf dem Mac erzeugt; Xcode-Signing und native Builds können erst dort validiert werden.
+
+## Startabsturz mit iOS-27-SDK (UIScene)
+
+Wenn Xcode beim Start `UIScene life cycle is required` meldet, enthält das Repository seit dem Fix eine automatische Migration. Sie ergänzt beim nächsten `npm run ios:sync` die Scene-Konfiguration in `Info.plist` und eine kleine `SceneDelegate`-Klasse in der bereits eingebundenen `AppDelegate.swift`. Die bestehende Capacitor-Storyboard-Oberfläche bleibt erhalten.
+
+Im Terminal (vom Repository-Hauptordner aus):
+
+```bash
+git pull
+cd native
+npm run ios:sync
+npm run ios:open
+```
+
+In Xcode **Product → Clean Build Folder** und anschließend das angeschlossene iPhone auswählen und **Run** starten. Die App **nicht deinstallieren**, damit lokale Daten erhalten bleiben. Bei einem erneuten Startabsturz bitte die neue Debug-Konsole prüfen. Dieser Fix wurde im Repository erstellt, aber noch nicht auf einem iPhone verifiziert.
