@@ -6,11 +6,13 @@
     "prepare:web": "node scripts/copy-web.mjs",
     "ios:sync": "npm run prepare:web && npx cap sync ios",
     "ios:open": "npx cap open ios",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "ios:setup": "npm run prepare:web && (test -d ios/App || npx cap add ios) && npx cap sync ios"
   },
   "dependencies": {
     "@capacitor/core": "^7.0.0",
-    "@capacitor/ios": "^7.0.0"
+    "@capacitor/ios": "^7.0.0",
+    "@zxing/browser": "0.1.5"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.0.0"
